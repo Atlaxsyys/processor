@@ -1,12 +1,21 @@
 #include "stack.h"
 #include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <assert.h>
+
+
+const int value_reg = 0;
+const int value_RAM = 0;
+const int size_reg = 8;
+const int size_RAM = 100;
 
 struct processor 
 {
     int* code;
     int ip;
-    int reg[8];
-    int RAM[100];
+    int reg[size_reg];
+    int RAM[size_RAM];
     struct stack stk;
 };
 
@@ -19,28 +28,40 @@ enum commands
     SUB = 4,
 };
 
-int processor_constructor(processor* CPU);
+
+int processor_constructor(processor* CPU, FILE* file_read);
 int processing_code(processor* CPU);
 
 
 
 
 
-int main()
+int main(int argc, char* argv[])
 {
     processor CPU = {};
 
 
+    FILE* file_read = fopen(argv[1], "rb");
 
-    processor_constructor(&CPU);
+    processor_constructor(&CPU, file_read);
+
+    fclose(file_read);
+
+
     processing_code(&CPU);
     
 
 }
 
-int processor_constructor(processor* CPU)
+int processor_constructor(processor* CPU, FILE* file_read)
 {
-    FILE* file_read = fopen("converted_commands.bin", "rb");
+    assert(CPU);
+
+    if(!file_read)
+    {
+        fprintf(stderr, "Error open file");
+        abort();
+    }
 
     int pointer = 0;
     
@@ -52,11 +73,9 @@ int processor_constructor(processor* CPU)
 
     fread(CPU->code, sizeof(int), pointer, file_read);
 
-    fclose(file_read);
-
     CPU->ip = 0;
-    CPU->reg[8] = {};
-    CPU->RAM[100] = {};
+    memset(CPU->reg, value_reg, size_reg);
+    memset(CPU->RAM, value_RAM, size_RAM);
     stack_constructor(&CPU->stk, 5);
 
     printf("%d", pointer);
@@ -71,6 +90,8 @@ int processor_constructor(processor* CPU)
 
 int processing_code(processor* CPU)
 {
+    assert(CPU);
+
     int i = 0;
     int tmp = 1;
     while(tmp)
