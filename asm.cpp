@@ -4,22 +4,8 @@
 #include <string.h>
 #include <assert.h>
 
+#include "asm_proc.h"
 
-int assembler(int* commands, FILE* file_read);
-void printf_in_convert_commands(int* commands, int pointer, FILE* file_write_second);
-
-const int SIZE_COMMANDS = 200;
-
-
-enum commands
-{
-    HLT = -1,
-    OUT = 0,
-    PUSH = 1,
-    POP = 2,
-    ADD = 3,
-    SUB = 4,
-};
 
 int main(int argc, char* argv[])
 {

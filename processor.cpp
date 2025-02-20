@@ -1,37 +1,9 @@
-#include "stack.h"
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <assert.h>
 
-
-const int value_reg = 0;
-const int value_RAM = 0;
-const int size_reg = 8;
-const int size_RAM = 100;
-
-struct processor 
-{
-    int* code;
-    int ip;
-    int reg[size_reg];
-    int RAM[size_RAM];
-    struct stack stk;
-};
-
-enum commands
-{
-    HLT = -1,
-    OUT = 0,
-    PUSH = 1,
-    ADD = 3,
-    SUB = 4,
-};
-
-
-int processor_constructor(processor* CPU, FILE* file_read);
-int processing_code(processor* CPU);
-
+#include "asm_proc.h"
 
 
 
@@ -78,12 +50,7 @@ int processor_constructor(processor* CPU, FILE* file_read)
     memset(CPU->RAM, value_RAM, size_RAM);
     stack_constructor(&CPU->stk, 5);
 
-    printf("%d", pointer);
-
-    // for(int i = 0; i < pointer; i++)
-    // {
-    //     fprintf(stderr, "%d\n", CPU->code[i]);
-    // }
+    printf("%d\n", pointer);
 
     return 0;
 }
@@ -125,7 +92,7 @@ int processing_code(processor* CPU)
         case OUT:
             {
             int deleted_value = stack_pop(&CPU->stk);
-            printf("head_stack:  %d", deleted_value);
+            printf("head_stack:  %d\n", deleted_value);
             i++;
 
             break;
