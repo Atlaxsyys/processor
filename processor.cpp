@@ -19,7 +19,6 @@ int main(int argc, char* argv[])
 
     fclose(file_read);
 
-
     processing_code(&CPU);
     
 
@@ -50,8 +49,6 @@ int processor_constructor(processor* CPU, FILE* file_read)
     memset(CPU->RAM, value_RAM, size_RAM);
     stack_constructor(&CPU->stk, 5);
 
-    printf("%d\n", pointer);
-
     return 0;
 }
 
@@ -61,11 +58,12 @@ int processing_code(processor* CPU)
 
     int i = 0;
     int tmp = 1;
+    
     while(tmp)
     {
         switch(CPU->code[i])
         {
-        
+            
             case PUSH:
             {
                 stack_push(&CPU->stk, CPU->code[i + 1]);    // a->b = (*a).b
@@ -78,7 +76,6 @@ int processing_code(processor* CPU)
                 int number_second = stack_pop(&CPU->stk);
                 stack_push(&CPU->stk, number_first + number_second);
                 i++;
-
                 break;
             }
             case SUB:
@@ -136,9 +133,17 @@ int processing_code(processor* CPU)
                         CPU->reg[1] = deleted_number;
                         i += 2;
                     }
-                    
                     break;
                 }
+                case JMP:
+                {
+                    i = CPU->code[i + 1];
+
+                    break;
+                }
+                default:
+                fprintf(stderr, "UNKNOWN COMMAND:   %d", CPU->code[i]);
+                abort();
         }
     }
 

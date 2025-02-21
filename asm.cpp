@@ -7,8 +7,11 @@
 #include "asm_proc.h"
 
 
+
 int main(int argc, char* argv[])
 {
+    lbl mtk = {};
+
     int* commands = (int*)calloc(SIZE_COMMANDS, sizeof(int));
 
     FILE* file_read = fopen(argv[1], "r");
@@ -18,7 +21,10 @@ int main(int argc, char* argv[])
         abort();
     }
 
-    int pointer = assembler(commands, file_read);
+    int pointer = assembler(commands, file_read, &mtk);
+    rewind(file_read);
+    assembler(commands, file_read, &mtk);
+
 
     fclose(file_read);
 
@@ -36,7 +42,7 @@ int main(int argc, char* argv[])
 
 
 
-int assembler(int* commands, FILE* file_read)
+int assembler(int* commands, FILE* file_read, lbl* mtk)
 {
     assert(commands);
 
@@ -47,6 +53,13 @@ int assembler(int* commands, FILE* file_read)
     while(!feof(file_read))
     {
         fscanf(file_read, "%s", command);
+
+        if(strchr(command, ':') != NULL)
+        {
+            int number_mtk = 0;
+            sscanf(command, "%d:", &number_mtk);
+            mtk->labels[number_mtk] = pointer - 1;  // because commands[0] = number of operations
+        }
 
         
         if(strcmp(command, "push") == 0)
@@ -129,6 +142,16 @@ int assembler(int* commands, FILE* file_read)
                 commands[pointer + 1] = RBX;
                 pointer += 2;
             }
+        }
+
+        else if(strcmp(command, "jmp") == 0)
+        {
+            commands[pointer] = JMP;
+            int metka = 0;
+            fscanf(file_read, "%d", &metka);
+            commands[pointer + 1] = mtk->labels[metka];
+
+            pointer += 2;
         }
         number_of_operation++;
 

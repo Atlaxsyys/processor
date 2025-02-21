@@ -1,12 +1,13 @@
-push 10
+push 1
 pop_r rax
-push 20
-push 80
+7:
+push_r rax
+push_r rax
 add
-push 12
-push 2
-sub
 out
 push_r rax
-out
+push 1
+add
+pop_r rax
+jmp 7:
 hlt
