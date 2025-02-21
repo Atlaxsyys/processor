@@ -65,45 +65,80 @@ int processing_code(processor* CPU)
     {
         switch(CPU->code[i])
         {
-        case PUSH:
+        
+            case PUSH:
             {
-            stack_push(&CPU->stk, CPU->code[i + 1]);    // a->b = (*a).b
-            i += 2;
-            break;
+                stack_push(&CPU->stk, CPU->code[i + 1]);    // a->b = (*a).b
+                i += 2;
+                break;
             }
-        case ADD:
+            case ADD:
             {
-            int number_first = stack_pop(&CPU->stk);
-            int number_second = stack_pop(&CPU->stk);
-            stack_push(&CPU->stk, number_first + number_second);
-            i++;
+                int number_first = stack_pop(&CPU->stk);
+                int number_second = stack_pop(&CPU->stk);
+                stack_push(&CPU->stk, number_first + number_second);
+                i++;
 
-            break;
+                break;
             }
-        case SUB:
+            case SUB:
             {
-            int number_first = stack_pop(&CPU->stk);
-            int number_second = stack_pop(&CPU->stk);
-            stack_push(&CPU->stk, number_second - number_first);
-            i++;
+                int number_first = stack_pop(&CPU->stk);
+                int number_second = stack_pop(&CPU->stk);
+                stack_push(&CPU->stk, number_second - number_first);
+                i++;
 
-            break;
+                break;
             }
-        case OUT:
+            case OUT:
             {
-            int deleted_value = stack_pop(&CPU->stk);
-            printf("head_stack:  %d\n", deleted_value);
-            i++;
+                int deleted_value = stack_pop(&CPU->stk);
+                printf("head_stack:  %d\n", deleted_value);
+                i++;
 
-            break;
+                break;
             }
-        case HLT:
+            case HLT:
             {
-            i++;   
-            tmp = 0;
+                i++;   
+                tmp = 0;
 
-            break;
+                break;
             }
+            case PUSH_R:
+            {
+                if(CPU->code[i + 1] == RAX)
+                {
+                    stack_push(&CPU->stk, CPU->reg[0]);
+                    i += 2;
+                }
+
+                else if(CPU->code[i + 1] == RBX)
+                {
+                    stack_push(&CPU->stk, CPU->reg[1]);
+                    i += 2;
+                }
+
+                break;
+                
+            }
+                case POP_R:
+                {
+                    int deleted_number = stack_pop(&CPU->stk);
+                    
+                    if(CPU->code[i + 1] == RAX)
+                    {
+                        CPU->reg[0] = deleted_number;
+                        i += 2;
+                    }
+                    else if(CPU->code[i + 1] == RBX)
+                    {
+                        CPU->reg[1] = deleted_number;
+                        i += 2;
+                    }
+                    
+                    break;
+                }
         }
     }
 

@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-typedef double stackElem;
+typedef int stackElem;
 typedef unsigned long hash_elem;
 
 struct stack

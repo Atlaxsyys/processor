@@ -91,6 +91,45 @@ int assembler(int* commands, FILE* file_read)
             pointer++;
 
         }
+        else if(strcmp(command, "push_r") == 0)
+        {
+            commands[pointer] = PUSH_R;
+            fscanf(file_read, "%s", command);
+            char* reg_type = (char* ) calloc(3, sizeof(char));
+
+            if(strcmp(command, "rax") == 0)
+            {
+                reg_type = command;
+                commands[pointer + 1] = RAX;
+                pointer += 2;
+            }
+            else if(strcmp(command, "rbx") == 0)
+            {
+                reg_type = command;
+                commands[pointer + 1] = RBX;
+                pointer += 2;
+            }
+            
+            
+        }
+
+        else if(strcmp(command, "pop_r") == 0)
+        {
+            commands[pointer] = POP_R;
+            char* reg_type = (char* ) calloc(3, sizeof(char));
+            fscanf(file_read, "%s", reg_type);
+
+            if(strcmp(reg_type, "rax") == 0)
+            {
+                commands[pointer + 1] = RAX;
+                pointer += 2;
+            }
+            else if(strcmp(reg_type, "rbx") == 0)
+            {
+                commands[pointer + 1] = RBX;
+                pointer += 2;
+            }
+        }
         number_of_operation++;
 
     }

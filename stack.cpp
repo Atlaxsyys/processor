@@ -9,7 +9,7 @@
 const stackElem CANARY_START = 0xBAD;
 const stackElem CANARY_END = 0xDED;
 
-const stackElem POIZON_NUMBER = NAN;
+const stackElem POIZON_NUMBER = 0;
 
 
 
@@ -52,11 +52,11 @@ int stack_destroy(struct stack* stk)
 int stack_dump(struct stack* stk)
 {
     fprintf(stderr, YELLOW "______________________________________________________\n" CLEAR);
-    fprintf(stderr, GREEN "CANARY_START = %g\n" CLEAR, stk->data[0]);
+    fprintf(stderr, GREEN "CANARY_START = %d\n" CLEAR, stk->data[0]);
     for (int i = 1; i <= stk->capacity; i++)
-        printf (BLUE "stack->data[%d] = %g\n" CLEAR, i, stk->data[i]);
+        printf (BLUE "stack->data[%d] = %d\n" CLEAR, i, stk->data[i]);
 
-    fprintf(stderr, GREEN "CANARY_END = %g\n" CLEAR, stk->data[stk->capacity + 1]);
+    fprintf(stderr, GREEN "CANARY_END = %d\n" CLEAR, stk->data[stk->capacity + 1]);
 
     fprintf(stderr, RED "\n\nstack->data adress: %p\n" CLEAR, stk->data);
     fprintf(stderr, PURPLE "stack->capacity:    %d\n" CLEAR, stk->capacity);

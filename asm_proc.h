@@ -13,6 +13,10 @@ enum commands
     POP = 2,
     ADD = 3,
     SUB = 4,
+    PUSH_R = 11,
+    POP_R = 12,
+    RAX = 20,
+    RBX = 21,
 };
 
 
