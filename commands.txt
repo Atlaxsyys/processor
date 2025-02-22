@@ -1,6 +1,6 @@
 push 1
 pop_r rax
-7:
+jmp 7:
 push_r rax
 push_r rax
 add
@@ -9,5 +9,7 @@ push_r rax
 push 1
 add
 pop_r rax
-jmp 7:
+7:
+push 30
+out
 hlt

@@ -4,11 +4,12 @@
 #include <string.h>
 #include <assert.h>
 
-#include "asm_proc.h"
+#include "common.h"
+#include "asm.h"
 
 
 
-int main(int argc, char* argv[])
+int main(const int argc, const char* argv[])
 {
     lbl mtk = {};
 
@@ -42,8 +43,9 @@ int main(int argc, char* argv[])
 
 
 
-int assembler(int* commands, FILE* file_read, lbl* mtk)
+int assembler(int* commands, FILE* file_read, lbl* mtk) //TODO cut back
 {
+    assert(mtk);
     assert(commands);
 
     char command[6];
@@ -52,7 +54,7 @@ int assembler(int* commands, FILE* file_read, lbl* mtk)
 
     while(!feof(file_read))
     {
-        fscanf(file_read, "%s", command);
+        fscanf(file_read, "%6s", command);
 
         if(strchr(command, ':') != NULL)
         {
@@ -107,7 +109,7 @@ int assembler(int* commands, FILE* file_read, lbl* mtk)
         else if(strcmp(command, "push_r") == 0)
         {
             commands[pointer] = PUSH_R;
-            fscanf(file_read, "%s", command);
+            fscanf(file_read, "%6s", command);
             char* reg_type = (char* ) calloc(3, sizeof(char));
 
             if(strcmp(command, "rax") == 0)
@@ -129,8 +131,8 @@ int assembler(int* commands, FILE* file_read, lbl* mtk)
         else if(strcmp(command, "pop_r") == 0)
         {
             commands[pointer] = POP_R;
-            char* reg_type = (char* ) calloc(3, sizeof(char));
-            fscanf(file_read, "%s", reg_type);
+            char reg_type[3] = {};
+            fscanf(file_read, "%3s", reg_type);
 
             if(strcmp(reg_type, "rax") == 0)
             {
