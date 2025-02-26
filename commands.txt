@@ -9,7 +9,8 @@ push_r rax
 push 1
 add
 pop_r rax
-7:
 push 30
+7:
+push 15
 out
 hlt

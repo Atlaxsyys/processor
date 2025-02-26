@@ -13,5 +13,17 @@ struct lbl
 };
 
 
-int assembler(int* commands, FILE* file_read, lbl* mtk);
-void printf_in_convert_commands(int* commands, int pointer, FILE* file_write_second);
+int assembler(int* commands, char* commands_buffer, lbl* mtk, long size_file);
+void output_in_convert_commands(int* commands, int pointer, FILE* file_write_second);
+long size_commands(FILE* file_read);
+char* create_buffer(FILE* file_read);
+int n_string(char* commands_buffer, long size_command);
+int push(int* commands, int* pointer, char** commands_buffer);
+int pop(int* commands, int* pointer, char** commands_buffer);
+int math_operation(int* commands, int* pointer, enum commands operation);
+int out(int* commands, int* pointer);
+
+
+
+
+

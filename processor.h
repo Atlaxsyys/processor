@@ -5,8 +5,9 @@
 
 const int value_reg = 0;
 const int value_RAM = 0;
-const int size_reg = 8;
-const int size_RAM = 100;
+const int size_reg  = 8;
+const int size_RAM  = 100;
+const int capacity  = 5;
 
 enum processor_errors
 {
@@ -23,6 +24,7 @@ struct processor
     int reg[size_reg];
     int RAM[size_RAM];
     struct stack stk;
+    struct stack ret_adrr_stk;
 };
 
 int processor_constructor(processor* CPU, FILE* file_read);

@@ -9,24 +9,27 @@
 
 
 
-int main(const int argc,const char* argv[])
+int main( int argc,const char* argv[])
 {
     processor CPU = {};
 
+    if(argc != 2)
+    {
+        fprintf(stderr, "file transfer error: converted_commands\n");
+        exit(1);
+    }
 
     FILE* file_read = fopen(argv[1], "rb");
     if(!file_read)
     {
-        fprintf(stderr, "Error open file");
-        abort();
+        fprintf(stderr, "Error open file: converted_commands.bin");
+        exit(1);
     }
 
     processor_constructor(&CPU, file_read);
 
     fclose(file_read);
-
-    processing_code(&CPU);
-    
+    processing_code(&CPU);    
 
 }
 
@@ -47,9 +50,15 @@ int processor_constructor(processor* CPU, FILE* file_read)
     CPU->ip = 0;
     memset(CPU->reg, value_reg, size_reg);
     memset(CPU->RAM, value_RAM, size_RAM);
-    stack_constructor(&CPU->stk, 5);
+    stack_constructor(&CPU->stk, capacity);
+    stack_constructor(&CPU->ret_adrr_stk, capacity);
 
+    for(int i = 0; i < pointer; i++)
+    {
+        fprintf(stderr, "CPU->code[%d] = %d\n", i, CPU->code[i]);
+    }
     proc_assert(CPU);
+
     return 0;
 }
 
@@ -87,6 +96,24 @@ int processing_code(processor* CPU)
 
                 break;
             }
+            case MUL:
+            {
+                int number_first = stack_pop(&CPU->stk);
+                int number_second = stack_pop(&CPU->stk);
+                stack_push(&CPU->stk, number_first * number_second);
+                CPU->ip++;
+
+                break;
+            }
+            case DIV:
+            {
+                int number_first = stack_pop(&CPU->stk);
+                int number_second = stack_pop(&CPU->stk);
+                stack_push(&CPU->stk, number_first / number_second);
+                CPU->ip++;
+
+                break;
+            }
             case OUT:
             {
                 int deleted_value = stack_pop(&CPU->stk);
@@ -113,7 +140,7 @@ int processing_code(processor* CPU)
                 else if(CPU->code[CPU->ip + 1] == RBX)
                 {
                     stack_push(&CPU->stk, CPU->reg[1]);
-                    CPU->ip += 2;
+                    CPU->ip += 2;  
                 }
 
                 break;
@@ -141,10 +168,27 @@ int processing_code(processor* CPU)
 
                 break;
             }
+            case CALL:
+            {
+                stack_push(&CPU->ret_adrr_stk, CPU->ip + 2);
+                CPU->ip = CPU->code[CPU->ip + 1];
+
+                break;
+            }
+            case RET:
+            {
+                int after_call = stack_pop(&CPU->ret_adrr_stk);
+                CPU->ip = CPU->code[after_call];
+
+                break;
+            }
+
             default:
 
             fprintf(stderr, "UNKNOWN COMMAND:   %d", CPU->code[CPU->ip]);
             abort();
+
+            break;
         }
     }
 
@@ -174,17 +218,19 @@ int processor_verify(processor* CPU)
     return proc_errors;
 }
 
+// #define TO_STR(x) #x
+
 int processor_errors_output(int proc_errors)
 {
     convert_to_binary(proc_errors);
 
-    printf("ERRORS: \n\n");
+    fprintf(stderr, "ERRORS: \n\n");
 
     switch(proc_errors)
     {
         case CPU_CODE_IS_NULL:
         {
-            fprintf(stderr, "*CPU_CODE_IS_NULL\n");
+            fprintf(stderr, "*CPU_CODE_IS_NULL\n"); // FIXME вынести в функцию преобразование енама в const char*
             break;
         }
         case CPU_IS_NULL:

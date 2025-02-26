@@ -12,11 +12,15 @@ enum commands
     POP = 2,
     ADD = 3,
     SUB = 4,
+    MUL = 5,
+    DIV = 6,
     PUSH_R = 11,
     POP_R = 12,
     JMP = 13,
     RAX = 20,
     RBX = 21,
+    CALL = 30,
+    RET = 31,
 };
 
 
