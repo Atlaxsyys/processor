@@ -55,10 +55,6 @@ int processor_constructor(processor* CPU, FILE* file_read)
     stack_constructor(&CPU->stk, capacity);
     stack_constructor(&CPU->ret_adrr_stk, capacity);
 
-    for(int i = 0; i < pointer; i++)
-    {
-        fprintf(stderr, "CPU->code[%d] = %d\n", i, CPU->code[i]);
-    }
     proc_assert(CPU);
 
     return 0;
@@ -197,7 +193,7 @@ int processor_verify(processor* CPU)
     return proc_errors;
 }
 
-// #define TO_STR(x) #x
+#define TO_STR(x) #x
 
 int processor_errors_output(int proc_errors)
 {
@@ -205,26 +201,7 @@ int processor_errors_output(int proc_errors)
 
     fprintf(stderr, "ERRORS: \n\n");
 
-    switch(proc_errors)
-    {
-        case CPU_CODE_IS_NULL:
-        {
-            fprintf(stderr, "*CPU_CODE_IS_NULL\n"); // FIXME вынести в функцию преобразование енама в const char*
-            break;
-        }
-        case CPU_IS_NULL:
-        {
-            fprintf(stderr, "*CPU_IS_NULL\n");
-            break;
-        }
-        case CPU_IP_IS_BAD:
-        {
-            fprintf(stderr, "*CPU_IP_IS_BAD\n");
-            break;
-        }
-        default:
-            fprintf(stderr, "UNKNOWN ERRORS");
-    }
+    fprintf(stderr, "%s", converting_to_str(proc_errors));
 
     return 0;
 
@@ -389,4 +366,23 @@ int processor_dump(processor* CPU)
     fprintf(stderr, YELLOW "______________________________________________________\n" CLEAR);
 
     return 0;
+}
+
+const char* converting_to_str(int proc_errors)
+{
+    switch(proc_errors)
+    {
+        case CPU_IS_NULL:
+            return "CPU_IS_NULL";
+        case CPU_CODE_IS_NULL:
+            return "CPU_CODE_IS_NULL";
+        case CPU_IP_IS_BAD:
+            return "CPU_IP_IS_BAD";
+
+        default:
+        fprintf(stderr, "UNKNOWN OPERATION: %d", proc_errors);
+        return "UNKNOWN OPERATION";
+    }
+
+
 }

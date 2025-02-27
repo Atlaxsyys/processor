@@ -42,6 +42,8 @@ int ret_cpu(processor* CPU);
 int rax_cpu(processor* CPU);
 int rbx_cpu(processor* CPU);
 int processor_dump(processor* CPU);
+const char* converting_to_str(int proc_errors);
+
 
 
 
