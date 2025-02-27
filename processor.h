@@ -32,5 +32,19 @@ int processing_code(processor* CPU);
 int processor_verify(processor* CPU);
 int processor_errors_output(int proc_errors);
 int proc_assert(processor* CPU);
+int push_cpu(processor* CPU);
+int math_operation_cpu(processor* CPU, enum commands operation);
+int out_cpu(processor* CPU);
+int hlt_cpu(processor* CPU, int* tmp);
+int jmp_cpu(processor* CPU);
+int call_cpu(processor* CPU);
+int ret_cpu(processor* CPU);
+int rax_cpu(processor* CPU);
+int rbx_cpu(processor* CPU);
+int processor_dump(processor* CPU);
+
+
+
+
 
 

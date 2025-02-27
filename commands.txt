@@ -12,5 +12,7 @@ pop_r rax
 push 30
 7:
 push 15
+push 10
+add
 out
 hlt

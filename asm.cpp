@@ -26,7 +26,6 @@ int main(const int argc, const char* argv[])
         fprintf(stderr, "Error open file: commands.txt");
         exit(1);
     }
-    // FIXME читай весь файл в буффер и проходись по нему
     char* c_buffer = create_buffer(file_read);
     long size_file = size_commands(file_read);
 
@@ -66,37 +65,22 @@ int assembler(int* commands, char* commands_buffer, lbl* mtk, long size_file) //
     int pointer_scanf = 0;
     while(counter < number_string)
     {
-        int n = 0;
         sscanf(commands_buffer, "%s %n", command, &pointer_scanf);
         commands_buffer = commands_buffer + pointer_scanf;
 
         if(strchr(command, ':') != NULL)
         {
-            int number_mtk = 0;
-            sscanf(command, "%d:", &number_mtk);
-            mtk->labels[number_mtk] = pointer - 1;  // because commands[0] = number of operations
+            label(command, &pointer, mtk);
         }
         
         if(strcmp(command, "push") == 0)
         {
-            // commands[pointer] = PUSH;
-            // sscanf(commands_buffer, "%d %n", &commands[pointer + 1], &pointer_scanf);
-            // commands_buffer = commands_buffer + pointer_scanf;
-
-            // pointer += 2;
             push(commands, &pointer, &commands_buffer);
-            // fprintf(stderr, "pointer = %d ", pointer);
         }
 
         else if(strcmp(command, "pop") == 0)
         {
-            // commands[pointer] = POP;
-            // sscanf(commands_buffer, "%d %n", &commands[pointer + 1], &pointer_scanf);
-            // commands_buffer = commands_buffer + pointer_scanf;
-
-            // pointer += 2;
             pop(commands, &pointer, &commands_buffer);
-
         }
 
         else if(strcmp(command, "add") == 0)
@@ -119,89 +103,65 @@ int assembler(int* commands, char* commands_buffer, lbl* mtk, long size_file) //
 
         else if(strcmp(command, "out") == 0)
         {
-            // out(commands, &pointer);
-            commands[pointer] = OUT;
-            pointer++;
+            out(commands, &pointer);
         }
 
         else if(strcmp(command, "hlt") == 0)
         {
-            commands[pointer] = HLT;
-            pointer++;
+            hlt(commands, &pointer);
 
         }
         else if(strcmp(command, "push_r") == 0)
         {
-            commands[pointer] = PUSH_R;
+            push_r(commands, &pointer);
             char* reg_type = (char* ) calloc(3, sizeof(char));
             sscanf(commands_buffer, "%s %n", reg_type, &pointer_scanf);
             commands_buffer = commands_buffer + pointer_scanf;
             
             if(strcmp(reg_type, "rax") == 0)
             {
-                reg_type = command;
-                commands[pointer + 1] = RAX;
-                pointer += 2;
+                rax(commands, &pointer);
             }
             else if(strcmp(reg_type, "rbx") == 0)
             {
-                reg_type = command;
-                commands[pointer + 1] = RBX;
-                pointer += 2;
+                rbx(commands, &pointer);
             }
         }
 
         else if(strcmp(command, "pop_r") == 0)
         {
-            commands[pointer] = POP_R;
+            pop_r(commands, &pointer);
             char reg_type[3] = {};
             sscanf(commands_buffer, "%3s %n", reg_type, &pointer_scanf);
             commands_buffer = commands_buffer + pointer_scanf;
 
             if(strcmp(reg_type, "rax") == 0)
             {
-                commands[pointer + 1] = RAX;
-                pointer += 2;
+                rax(commands, &pointer);
             }
             else if(strcmp(reg_type, "rbx") == 0)
             {
-                commands[pointer + 1] = RBX;
-                pointer += 2;
+                rbx(commands, &pointer);
             }
         }
 
         else if(strcmp(command, "jmp") == 0)
         {
-            commands[pointer] = JMP;
-            int metka = 0;
-            sscanf(commands_buffer, "%d: %n", &metka, &pointer_scanf);
-            commands[pointer + 1] = mtk->labels[metka];
-            commands_buffer = commands_buffer + pointer_scanf;
-
-            pointer += 2;
+            jmp(commands, &pointer, &commands_buffer, mtk);
         }
 
         else if (strcmp(command, "call") == 0)
         {
-            commands[pointer] = CALL;
-            int func = 0;
-            sscanf(commands_buffer, "%d %n", &func, &pointer_scanf);
-            commands[pointer + 1] = mtk->labels[func];
-            commands_buffer = commands_buffer + pointer_scanf;
-
-            pointer += 2;
+            call(commands, &pointer, &commands_buffer, mtk);
         }
 
         else if (strcmp(command, "ret") == 0)
         {
-            commands[pointer] = RET;
-            
-            pointer++;
+            ret(commands, &pointer);
         }
 
         counter++;
         number_of_operation++;
-
     }
     commands[0] = pointer - 1;
 
@@ -226,6 +186,7 @@ long size_commands(FILE* file_read)
 
     return size_file;
 }
+
 char* create_buffer(FILE* file_read)
 {
     assert(file_read);
@@ -261,8 +222,6 @@ int push(int* commands, int* pointer, char** commands_buffer)
 {
     int pointer_scanf = 0;
     commands[*pointer] = PUSH;
-    // fprintf(stderr, "DAMIRRR");
-    // fprintf(stderr, "commands[pointer] = %d  \n", commands[*pointer]);
 
     sscanf(*commands_buffer, "%d %n", &commands[*pointer + 1], &pointer_scanf);
 
@@ -318,7 +277,7 @@ int math_operation(int* commands, int* pointer, enum commands operation)
         }
     }
     
-    *pointer++;
+    (*pointer)++;
 
     return 0;
     
@@ -326,8 +285,119 @@ int math_operation(int* commands, int* pointer, enum commands operation)
 
 int out(int* commands, int* pointer)
 {
+    assert(commands);
+
     commands[*pointer] = OUT;
-    *pointer++;
+    (*pointer)++;
 
     return 0;
 }
+
+int hlt(int* commands, int* pointer)
+{
+    assert(commands);
+
+    commands[*pointer] = HLT;
+    (*pointer)++;
+
+    return 0;
+}
+
+int call(int* commands, int* pointer, char** commands_buffer, lbl* mtk)
+{
+    assert(commands);
+    assert(commands_buffer);
+    assert(mtk);
+
+    int pointer_scanf = 0;
+    commands[*pointer] = CALL;
+
+    int func = 0;
+    sscanf(*commands_buffer, "%d %n", &func, &pointer_scanf);
+    commands[*pointer + 1] = mtk->labels[func];
+
+    (*pointer) += 2;
+    *commands_buffer = *commands_buffer + pointer_scanf;
+
+    return 0;
+}
+
+int ret(int* commands, int* pointer)
+{
+    assert(commands);
+
+    commands[*pointer] = RET;
+    (*pointer)++;
+
+    return 0;
+}
+
+int jmp(int* commands, int* pointer, char** commands_buffer, lbl* mtk)
+{
+    assert(commands);
+    assert(commands_buffer);
+    assert(mtk);
+
+    int pointer_scanf = 0;
+    commands[*pointer] = JMP;
+
+    int metka = 0;
+    sscanf(*commands_buffer, "%d: %n", &metka, &pointer_scanf);
+    commands[*pointer + 1] = mtk->labels[metka];
+
+    (*pointer) += 2;
+    *commands_buffer = *commands_buffer + pointer_scanf;
+
+    return 0;
+}
+
+int label(char* command, int* pointer, lbl* mtk)
+{
+    assert(command);
+    assert(mtk);
+
+    int number_mtk = 0;
+    sscanf(command, "%d:", &number_mtk);
+    mtk->labels[number_mtk] = (*pointer) - 1;  // because commands[0] = number of operations
+
+    return 0;
+}
+
+int rax(int* commands, int* pointer)
+{
+    assert(commands);
+
+    commands[(*pointer) + 1] = RAX;
+    (*pointer) += 2;
+
+    return 0;
+}
+
+int rbx(int* commands, int* pointer)
+{
+    assert(commands);
+    
+    commands[(*pointer) + 1] = RBX;
+    (*pointer) += 2;
+
+    return 0;
+}
+
+int push_r(int* commands, int* pointer)
+{
+    assert(commands);
+
+    commands[(*pointer)] = PUSH_R;
+
+    return 0;
+}
+
+int pop_r(int* commands, int* pointer)
+{
+    assert(commands);
+    
+    commands[(*pointer)] = POP_R;
+
+    return 0;
+}
+

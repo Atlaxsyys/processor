@@ -5,7 +5,7 @@
 
 #include "common.h"
 #include "processor.h"
-
+#include "colour.h"
 
 
 
@@ -29,7 +29,9 @@ int main( int argc,const char* argv[])
     processor_constructor(&CPU, file_read);
 
     fclose(file_read);
-    processing_code(&CPU);    
+    processing_code(&CPU);
+    processor_dump(&CPU); 
+
 
 }
 
@@ -75,57 +77,40 @@ int processing_code(processor* CPU)
             
             case PUSH:
             {
-                stack_push(&CPU->stk, CPU->code[CPU->ip + 1]);    // a->b = (*a).b
-                CPU->ip += 2;
+                push_cpu(CPU);
                 break;
             }
             case ADD:
             {
-                int number_first = stack_pop(&CPU->stk);
-                int number_second = stack_pop(&CPU->stk);
-                stack_push(&CPU->stk, number_first + number_second);
-                CPU->ip++;
+                math_operation_cpu(CPU, ADD);
                 break;
             }
             case SUB:
             {
-                int number_first = stack_pop(&CPU->stk);
-                int number_second = stack_pop(&CPU->stk);
-                stack_push(&CPU->stk, number_second - number_first);
-                CPU->ip++;
+                math_operation_cpu(CPU, SUB);
 
                 break;
             }
             case MUL:
             {
-                int number_first = stack_pop(&CPU->stk);
-                int number_second = stack_pop(&CPU->stk);
-                stack_push(&CPU->stk, number_first * number_second);
-                CPU->ip++;
-
+                math_operation_cpu(CPU, MUL);
                 break;
             }
             case DIV:
             {
-                int number_first = stack_pop(&CPU->stk);
-                int number_second = stack_pop(&CPU->stk);
-                stack_push(&CPU->stk, number_first / number_second);
-                CPU->ip++;
+                math_operation_cpu(CPU, DIV);
 
                 break;
             }
             case OUT:
             {
-                int deleted_value = stack_pop(&CPU->stk);
-                printf("head_stack:  %d\n", deleted_value);
-                CPU->ip++;
+                out_cpu(CPU);
 
                 break;
             }
             case HLT:
             {
-                CPU->ip++;   
-                tmp = 0;
+                hlt_cpu(CPU, &tmp);
 
                 break;
             }
@@ -133,14 +118,12 @@ int processing_code(processor* CPU)
             {
                 if(CPU->code[CPU->ip + 1] == RAX)
                 {
-                    stack_push(&CPU->stk, CPU->reg[0]);
-                    CPU->ip += 2;
+                    rax_cpu(CPU);
                 }
 
                 else if(CPU->code[CPU->ip + 1] == RBX)
                 {
-                    stack_push(&CPU->stk, CPU->reg[1]);
-                    CPU->ip += 2;  
+                    rbx_cpu(CPU);
                 }
 
                 break;
@@ -152,33 +135,29 @@ int processing_code(processor* CPU)
                 
                 if(CPU->code[CPU->ip + 1] == RAX)
                 {
-                    CPU->reg[0] = deleted_number;
-                    CPU->ip += 2;
+                    rax_cpu(CPU);
                 }
                 else if(CPU->code[CPU->ip + 1] == RBX)
                 {
-                    CPU->reg[1] = deleted_number;
-                    CPU->ip += 2;
+                    rbx_cpu(CPU);
                 }
                 break;
             }
             case JMP:
             {
-                CPU->ip = CPU->code[CPU->ip + 1];
+                jmp_cpu(CPU);
 
                 break;
             }
             case CALL:
             {
-                stack_push(&CPU->ret_adrr_stk, CPU->ip + 2);
-                CPU->ip = CPU->code[CPU->ip + 1];
+                call_cpu(CPU);
 
                 break;
             }
             case RET:
             {
-                int after_call = stack_pop(&CPU->ret_adrr_stk);
-                CPU->ip = CPU->code[after_call];
+                ret_cpu(CPU);
 
                 break;
             }
@@ -262,6 +241,152 @@ int proc_assert(processor* CPU)
         processor_errors_output(proc_errors);
         abort();
     }
+
+    return 0;
+}
+
+int push_cpu(processor* CPU)
+{
+    stack_push(&CPU->stk, CPU->code[CPU->ip + 1]);    // a->b = (*a).b
+    CPU->ip += 2;
+
+    return 0;
+}
+
+int math_operation_cpu(processor* CPU, enum commands operation)
+{
+
+    int number_first = stack_pop(&CPU->stk);
+    int number_second = stack_pop(&CPU->stk);
+
+    switch(operation)
+    {
+        case ADD:
+        {
+            stack_push(&CPU->stk, number_first + number_second);
+            break;
+        }
+        case SUB:
+        {
+            stack_push(&CPU->stk, number_first - number_second);
+            break;
+        }
+        case MUL:
+        {
+            stack_push(&CPU->stk, number_first * number_second);
+            break;
+        }
+        case DIV:
+        {
+            stack_push(&CPU->stk, number_first * number_second);
+            break;
+        }
+        default:
+        {
+
+            fprintf(stderr, "UNKWOWN OPERATION: %d", operation);
+        }
+    }
+
+    CPU->ip++;
+    
+    return 0;
+    
+}
+
+int out_cpu(processor* CPU)
+{
+    proc_assert(CPU);
+
+    int deleted_value = stack_pop(&CPU->stk);
+    printf("head_stack:  %d\n", deleted_value);
+    CPU->ip++;
+
+    return 0;
+}
+
+int hlt_cpu(processor* CPU, int* tmp)
+{
+    proc_assert(CPU);
+    
+    CPU->ip++;   
+    *tmp = 0;
+
+    return 0;
+}
+
+int jmp_cpu(processor* CPU)
+{
+    proc_assert(CPU);
+
+    CPU->ip = CPU->code[CPU->ip + 1];
+
+    return 0;
+}
+
+int call_cpu(processor* CPU)
+{
+    proc_assert(CPU);
+
+    stack_push(&CPU->ret_adrr_stk, CPU->ip + 2);
+    CPU->ip = CPU->code[CPU->ip + 1];
+
+    return 0;
+}
+
+int ret_cpu(processor* CPU)
+{
+    proc_assert(CPU);
+
+    int after_call = stack_pop(&CPU->ret_adrr_stk);
+    CPU->ip = CPU->code[after_call];
+
+    return 0;
+}
+
+int rax_cpu(processor* CPU)
+{
+    proc_assert(CPU);
+
+    stack_push(&CPU->stk, CPU->reg[0]);
+    CPU->ip += 2;
+    
+    return 0;
+}
+
+int rbx_cpu(processor* CPU)
+{
+    proc_assert(CPU);
+
+    stack_push(&CPU->stk, CPU->reg[0]);
+    CPU->ip += 2;
+    
+    return 0;
+}
+
+int processor_dump(processor* CPU)
+{
+    proc_assert(CPU);
+
+    fprintf(stderr, YELLOW "______________________________________________________\n" CLEAR);
+
+    fprintf(stderr, RED "CPU->ip = %d\n" CLEAR, CPU->ip);
+    for(int i = 0; i < CPU->ip; i++)
+    {
+        fprintf (stderr, BLUE "CPU->code[%d] = %d\n" CLEAR, i, CPU->code[i]);
+    }
+    for(int i = 0; i < size_reg; i++)
+    {
+        fprintf(stderr, PURPLE "CPU->reg[%d] = %d\n" CLEAR, i, CPU->reg[i]);
+    }
+
+    int errors = processor_verify(CPU);
+    if(errors == 0)
+    {
+        fprintf(stderr, GREEN "\nCPU IS GOOD\n" CLEAR);
+    }
+
+    fprintf(stderr, YELLOW "______________________________________________________\n" CLEAR);
 
     return 0;
 }

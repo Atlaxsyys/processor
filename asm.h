@@ -22,6 +22,17 @@ int push(int* commands, int* pointer, char** commands_buffer);
 int pop(int* commands, int* pointer, char** commands_buffer);
 int math_operation(int* commands, int* pointer, enum commands operation);
 int out(int* commands, int* pointer);
+int hlt(int* commands, int* pointer);
+int call(int* commands, int* pointer, char** commands_buffer, lbl* mtk);
+int ret(int* commands, int* pointer);
+int jmp(int* commands, int* pointer, char** commands_buffer, lbl* mtk);
+int label(char* command, int* pointer, lbl* mtk);
+int rax(int* commands, int* pointer);
+int rbx(int* commands, int* pointer);
+int push_r(int* commands, int* pointer);
+int pop_r(int* commands, int* pointer);
+
+
 
 
 
