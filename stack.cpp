@@ -17,7 +17,7 @@ int stack_constructor(struct stack* stk, int capacity)
 {
     assert(stk);
 
-    stk->data = (stackElem*) calloc(capacity + 2, sizeof(stackElem));
+    stk->data = (stackElem*) calloc((size_t) capacity + 2, sizeof(stackElem));
     stk->capacity = capacity;
     stk->size = 0;
 
@@ -159,14 +159,15 @@ int error_output(int errors)
 void stack_realloc(struct stack* stk)
 {
     const int scale_factor = 2;
-
+    
     stk->capacity *= scale_factor;
     
-    stk->data = (stackElem*) realloc (stk->data, stk->capacity * sizeof (stk->data[0]));
+    stk->data = (stackElem*) realloc (stk->data, stk->capacity * sizeof (stk->data[0]) + 2* sizeof(stk->data[0]));
 
     for (int i = stk->size + 1; i <= stk->capacity; i++)
+    {
         stk->data[i] = POIZON_NUMBER;
-
+    }
     stk->data[stk->capacity + 1] = CANARY_END; 
 
 }
@@ -174,7 +175,6 @@ void stack_realloc(struct stack* stk)
 int stack_push(struct stack* stk, stackElem number)
 {
     stack_assert(stk);
-
     if (stk->capacity <= stk->size)
     {
         stack_realloc(stk);

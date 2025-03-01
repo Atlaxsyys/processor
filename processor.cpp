@@ -9,28 +9,31 @@
 
 
 
-int main( int argc,const char* argv[])
+int main(const int argc,const char* argv[])
 {
     processor CPU = {};
 
     if(argc != 2)
     {
         fprintf(stderr, "file transfer error: converted_commands\n");
-        exit(1);
+        return 1;
     }
 
     FILE* file_read = fopen(argv[1], "rb");
     if(!file_read)
     {
         fprintf(stderr, "Error open file: converted_commands.bin");
-        exit(1);
+        return 1;
     }
 
     processor_constructor(&CPU, file_read);
 
     fclose(file_read);
     processing_code(&CPU);
-    processor_dump(&CPU); 
+    processor_dump(&CPU);
+    free(CPU.code);
+    stack_destroy(&CPU.stk);
+    stack_destroy(&CPU.ret_adrr_stk);
 
 
 }
@@ -45,11 +48,12 @@ int processor_constructor(processor* CPU, FILE* file_read)
 
     
 
-    CPU->code = (int* )calloc(pointer, sizeof(int));
+    CPU->code = (int* )calloc((size_t)pointer, sizeof(int));
 
-    fread(CPU->code, sizeof(int), pointer, file_read);
+    fread(CPU->code, sizeof(int),(size_t) pointer, file_read);
 
     CPU->ip = 0;
+    CPU->is_finished = 1;
     memset(CPU->reg, value_reg, size_reg);
     memset(CPU->RAM, value_RAM, size_RAM);
     stack_constructor(&CPU->stk, capacity);
@@ -64,9 +68,8 @@ int processing_code(processor* CPU)
 {
     proc_assert(CPU);
 
-    int tmp = 1;
     
-    while(tmp)
+    while(CPU->is_finished)
     {
         switch(CPU->code[CPU->ip])
         {
@@ -98,6 +101,12 @@ int processing_code(processor* CPU)
 
                 break;
             }
+            case SQRT:
+            {
+                math_operation_cpu(CPU, SQRT);
+                
+                break;
+            }
             case OUT:
             {
                 out_cpu(CPU);
@@ -106,42 +115,44 @@ int processing_code(processor* CPU)
             }
             case HLT:
             {
-                hlt_cpu(CPU, &tmp);
+                hlt_cpu(CPU);
 
                 break;
             }
             case PUSH_R:
             {
-                if(CPU->code[CPU->ip + 1] == RAX)
-                {
-                    rax_cpu(CPU);
-                }
-
-                else if(CPU->code[CPU->ip + 1] == RBX)
-                {
-                    rbx_cpu(CPU);
-                }
+                push_reg_cpu(CPU);
 
                 break;
-                
             }
             case POP_R:
             {
                 int deleted_number = stack_pop(&CPU->stk);
-                
-                if(CPU->code[CPU->ip + 1] == RAX)
-                {
-                    rax_cpu(CPU);
-                }
-                else if(CPU->code[CPU->ip + 1] == RBX)
-                {
-                    rbx_cpu(CPU);
-                }
+                pop_reg_cpu(CPU, deleted_number);
+
                 break;
             }
             case JMP:
             {
                 jmp_cpu(CPU);
+
+                break;
+            }
+            case JE:
+            {
+                je_cpu(CPU);
+
+                break;
+            }
+            case JNE:
+            {
+                jne_cpu(CPU);
+
+                break;
+            }
+            case JB:
+            {
+                jb_cpu(CPU);
 
                 break;
             }
@@ -157,11 +168,16 @@ int processing_code(processor* CPU)
 
                 break;
             }
+            case IN:
+            {
+                in_cpu(CPU);
+
+                break;
+            }
 
             default:
 
-            fprintf(stderr, "UNKNOWN COMMAND:   %d", CPU->code[CPU->ip]);
-            abort();
+            fprintf(stderr, "UNKNOWN COMMAND: %d", CPU->code[CPU->ip]);
 
             break;
         }
@@ -174,6 +190,8 @@ int processing_code(processor* CPU)
 
 int processor_verify(processor* CPU)
 {
+    assert(CPU);
+
     int proc_errors = 0;
 
     if(CPU == NULL)
@@ -192,8 +210,6 @@ int processor_verify(processor* CPU)
 
     return proc_errors;
 }
-
-#define TO_STR(x) #x
 
 int processor_errors_output(int proc_errors)
 {
@@ -224,6 +240,8 @@ int proc_assert(processor* CPU)
 
 int push_cpu(processor* CPU)
 {
+    proc_assert(CPU);
+
     stack_push(&CPU->stk, CPU->code[CPU->ip + 1]);    // a->b = (*a).b
     CPU->ip += 2;
 
@@ -232,30 +250,48 @@ int push_cpu(processor* CPU)
 
 int math_operation_cpu(processor* CPU, enum commands operation)
 {
-
-    int number_first = stack_pop(&CPU->stk);
-    int number_second = stack_pop(&CPU->stk);
+    proc_assert(CPU);
 
     switch(operation)
     {
         case ADD:
         {
+            int number_first = stack_pop(&CPU->stk);
+            int number_second = stack_pop(&CPU->stk);
             stack_push(&CPU->stk, number_first + number_second);
+
             break;
         }
         case SUB:
         {
-            stack_push(&CPU->stk, number_first - number_second);
+            int number_first = stack_pop(&CPU->stk);
+            int number_second = stack_pop(&CPU->stk);
+            stack_push(&CPU->stk, number_second - number_first);
+
             break;
         }
         case MUL:
         {
+            int number_first = stack_pop(&CPU->stk);
+            int number_second = stack_pop(&CPU->stk);
             stack_push(&CPU->stk, number_first * number_second);
+
             break;
         }
         case DIV:
         {
-            stack_push(&CPU->stk, number_first * number_second);
+            int number_first = stack_pop(&CPU->stk);
+            int number_second = stack_pop(&CPU->stk);
+            stack_push(&CPU->stk, number_second / number_first);
+
+            break;
+        }
+        case SQRT:
+        {
+            int elem = stack_pop(&CPU->stk);
+            int res = (int) sqrt(elem);
+            stack_push(&CPU->stk, res);
+
             break;
         }
         default:
@@ -282,12 +318,12 @@ int out_cpu(processor* CPU)
     return 0;
 }
 
-int hlt_cpu(processor* CPU, int* tmp)
+int hlt_cpu(processor* CPU)
 {
     proc_assert(CPU);
     
     CPU->ip++;   
-    *tmp = 0;
+    CPU->is_finished = 0;
 
     return 0;
 }
@@ -297,6 +333,64 @@ int jmp_cpu(processor* CPU)
     proc_assert(CPU);
 
     CPU->ip = CPU->code[CPU->ip + 1];
+
+    return 0;
+}
+
+int je_cpu(processor* CPU)
+{
+    proc_assert(CPU);
+
+    int number_first = stack_pop(&CPU->stk);
+    int number_second = stack_pop(&CPU->stk);
+
+    if (number_first == number_second)
+    {
+    CPU->ip = CPU->code[CPU->ip + 1];
+    }
+    else
+    {
+        CPU->ip += 2;
+    }
+
+    return 0;
+}
+
+int jne_cpu(processor* CPU)
+{
+    proc_assert(CPU);
+
+    int number_first = stack_pop(&CPU->stk);
+    int number_second = stack_pop(&CPU->stk);
+
+    if (number_first != number_second)
+    {
+        CPU->ip = CPU->code[CPU->ip + 1];
+    }
+    else
+    {
+        CPU->ip += 2;
+    }
+
+    return 0;
+}
+
+
+int jb_cpu(processor* CPU)
+{
+    proc_assert(CPU);
+
+    int number_first = stack_pop(&CPU->stk);
+    int number_second = stack_pop(&CPU->stk);
+
+    if (number_first < number_second)
+    {
+        CPU->ip = CPU->code[CPU->ip + 1];
+    }
+    else
+    {
+        CPU->ip += 2;
+    }
 
     return 0;
 }
@@ -316,28 +410,75 @@ int ret_cpu(processor* CPU)
     proc_assert(CPU);
 
     int after_call = stack_pop(&CPU->ret_adrr_stk);
-    CPU->ip = CPU->code[after_call];
+    CPU->ip = after_call;
 
     return 0;
 }
 
-int rax_cpu(processor* CPU)
+int push_reg_cpu(processor* CPU)
 {
-    proc_assert(CPU);
+    assert(CPU);
 
-    stack_push(&CPU->stk, CPU->reg[0]);
+    if(CPU->code[CPU->ip + 1] == RAX)
+    {
+        stack_push(&CPU->stk, CPU->reg[0]);
+    }
+    else if(CPU->code[CPU->ip + 1] == RBX)
+    {
+        stack_push(&CPU->stk, CPU->reg[1]);
+    }
+    else if(CPU->code[CPU->ip + 1] == RCX)
+    {
+        stack_push(&CPU->stk, CPU->reg[2]);
+    }
+    else if(CPU->code[CPU->ip + 1] == RDX)
+    {
+        stack_push(&CPU->stk, CPU->reg[3]);
+    }
+
     CPU->ip += 2;
-    
+
     return 0;
 }
 
-int rbx_cpu(processor* CPU)
-{
-    proc_assert(CPU);
 
-    stack_push(&CPU->stk, CPU->reg[0]);
-    CPU->ip += 2;
+int pop_reg_cpu(processor* CPU, int deleted_number)
+{
+    assert(CPU);
     
+    if(CPU->code[CPU->ip + 1] == RAX)
+    {
+        CPU->reg[0] = deleted_number;
+    }
+    else if(CPU->code[CPU->ip + 1] == RBX)
+    {
+        CPU->reg[1] = deleted_number;
+    }
+    else if(CPU->code[CPU->ip + 1] == RCX)
+    {
+        CPU->reg[2] = deleted_number;
+    }
+    else if(CPU->code[CPU->ip + 1] == RDX)
+    {
+        CPU->reg[3] = deleted_number;
+    }
+
+    CPU->ip += 2;
+
+    return 0;
+}
+
+int in_cpu(processor* CPU)
+{
+    assert(CPU);
+
+    int number = 0;
+    scanf("%d", &number);
+
+    stack_push (&CPU->stk, number);
+
+    CPU->ip += 1;
+
     return 0;
 }
 
@@ -380,9 +521,6 @@ const char* converting_to_str(int proc_errors)
             return "CPU_IP_IS_BAD";
 
         default:
-        fprintf(stderr, "UNKNOWN OPERATION: %d", proc_errors);
         return "UNKNOWN OPERATION";
     }
-
-
 }

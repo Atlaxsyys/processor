@@ -3,11 +3,11 @@
 #include "stack.h"
 
 
-const int value_reg = 0;
-const int value_RAM = 0;
+const size_t value_reg = 0;
+const size_t value_RAM = 0;
 const int size_reg  = 8;
 const int size_RAM  = 100;
-const int capacity  = 5;
+const int capacity  = 10;
 
 enum processor_errors
 {
@@ -21,6 +21,7 @@ struct processor
 {
     int* code;
     int ip;
+    bool is_finished;
     int reg[size_reg];
     int RAM[size_RAM];
     struct stack stk;
@@ -35,12 +36,16 @@ int proc_assert(processor* CPU);
 int push_cpu(processor* CPU);
 int math_operation_cpu(processor* CPU, enum commands operation);
 int out_cpu(processor* CPU);
-int hlt_cpu(processor* CPU, int* tmp);
+int hlt_cpu(processor* CPU);
 int jmp_cpu(processor* CPU);
+int je_cpu(processor* CPU);
+int jne_cpu(processor* CPU);
+int jb_cpu(processor* CPU);
 int call_cpu(processor* CPU);
 int ret_cpu(processor* CPU);
-int rax_cpu(processor* CPU);
-int rbx_cpu(processor* CPU);
+int in_cpu(processor* CPU);
+int push_reg_cpu(processor* CPU);
+int pop_reg_cpu(processor* CPU, int deleted_number);
 int processor_dump(processor* CPU);
 const char* converting_to_str(int proc_errors);
 

@@ -1,0 +1,33 @@
+in
+pop_r rax
+push_r rax
+push 0
+je 10:
+push_r rax
+call 2:
+push_r rax
+mul
+out
+hlt
+2:
+pop_r rax
+push_r rax
+push_r rax
+push 1
+jne 3:
+push 1
+pop_r rax
+ret
+3:
+push_r rax
+push 1
+sub
+call 2:
+push_r rax
+mul
+pop_r rax
+ret
+10:
+push 1
+out
+hlt
