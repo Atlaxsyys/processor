@@ -7,25 +7,29 @@
 enum commands
 {
     HLT = -1,
-    OUT = 0,
-    PUSH = 1,
-    POP = 2,
-    ADD = 3,
-    SUB = 4,
-    MUL = 5,
-    DIV = 6,
-    SQRT = 7,
-    IN = 8,
-    PUSH_R = 11,
-    POP_R = 12,
-    JMP = 13,
-    JE = 14,
-    JNE = 15,
-    JB = 16,
-    RAX = 20,
-    RBX = 21,
-    RCX = 22,
-    RDX = 23,
+    OUT = 10,
+    PUSH = 11,
+    POP = 12,
+    ADD = 13,
+    SUB = 14,
+    MUL = 15,
+    DIV = 16,
+    SQRT = 17,
+    IN = 18,
+    PUSH_R = 21,
+    POP_R = 22,
+    JMP = 23,
+    JE = 24,
+    JNE = 25,
+    JB = 26,
     CALL = 30,
     RET = 31
+};
+
+enum registrs
+{
+    RAX = 0,
+    RBX = 1,
+    RCX = 2,
+    RDX = 3,
 };

@@ -3,5 +3,5 @@ all:
 	@g++ asm.cpp $(flags) -g -o asm.exe
 	@g++ processor.cpp hash.cpp stack.cpp $(flags) -g -o processor.exe
 run:
-	@./asm.exe factorial.txt converted_commands.bin
+	@./asm.exe kvadr.txt converted_commands.bin
 	@./processor.exe converted_commands.bin

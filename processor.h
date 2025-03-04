@@ -1,6 +1,7 @@
 
 #pragma once
 #include "stack.h"
+#include "common.h"
 
 
 const size_t value_reg = 0;
@@ -8,6 +9,7 @@ const size_t value_RAM = 0;
 const int size_reg  = 8;
 const int size_RAM  = 100;
 const int capacity  = 10;
+const int error = -666;
 
 enum processor_errors
 {
@@ -34,13 +36,11 @@ int processor_verify(processor* CPU);
 int processor_errors_output(int proc_errors);
 int proc_assert(processor* CPU);
 int push_cpu(processor* CPU);
-int math_operation_cpu(processor* CPU, enum commands operation);
+int math_operation_cpu(processor* CPU, int code_operation);
 int out_cpu(processor* CPU);
 int hlt_cpu(processor* CPU);
-int jmp_cpu(processor* CPU);
-int je_cpu(processor* CPU);
-int jne_cpu(processor* CPU);
-int jb_cpu(processor* CPU);
+int jump_cpu(processor* CPU, int code_operation);
+int get_index_reg(processor* CPU);
 int call_cpu(processor* CPU);
 int ret_cpu(processor* CPU);
 int in_cpu(processor* CPU);

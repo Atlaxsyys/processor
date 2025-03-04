@@ -17,13 +17,14 @@ int main(const int argc, const char* argv[])
 
     if(argc != 3)
     {
-        fprintf(stderr, "file transfer error: commands.txt and converted_commands.bin");
+        fprintf(stderr, "file transfer error: %s and %s", argv[1], argv[2]);
+        return 1;
     }
 
     FILE* file_read = fopen(argv[1], "rb");
     if(!file_read)
     {
-        fprintf(stderr, "Error open file: commands.txt");
+        fprintf(stderr, "Error open file: %s", argv[1]);
         return 1;
     }
     char* c_buffer = create_buffer(file_read);
@@ -92,7 +93,7 @@ int assembler(int* commands, char* commands_buffer, lbl* mtk, long size_file) //
             pop(commands, &pointer, &commands_buffer);
         }
 
-        detect_math_opertion(commands, &pointer, command);
+        math_operation(commands, &pointer, command);
 
         if(strcmp(command, "out") == 0)
         {
@@ -111,7 +112,7 @@ int assembler(int* commands, char* commands_buffer, lbl* mtk, long size_file) //
             sscanf(commands_buffer, "%3s %n", reg_type, &pointer_scanf);
             commands_buffer = commands_buffer + pointer_scanf;
             
-            detect_reg(commands, &pointer, reg_type);
+            reg(commands, &pointer, reg_type);
         }
 
         else if(strcmp(command, "pop_r") == 0)
@@ -121,25 +122,9 @@ int assembler(int* commands, char* commands_buffer, lbl* mtk, long size_file) //
             sscanf(commands_buffer, "%3s %n", reg_type, &pointer_scanf);
             commands_buffer = commands_buffer + pointer_scanf;
 
-            detect_reg(commands, &pointer, reg_type);
+            reg(commands, &pointer, reg_type);
         }
 
-        else if(strcmp(command, "jmp") == 0)
-        {
-            jmp(commands, &pointer, &commands_buffer, mtk);
-        }
-        else if(strcmp(command, "je") == 0)
-        {
-            je(commands, &pointer, &commands_buffer, mtk);
-        }
-        else if(strcmp(command, "jne") == 0)
-        {
-            jne(commands, &pointer, &commands_buffer, mtk);
-        }
-        else if(strcmp(command, "jb") == 0)
-        {
-            jb(commands, &pointer, &commands_buffer, mtk);
-        }
         else if (strcmp(command, "call") == 0)
         {
             call(commands, &pointer, &commands_buffer, mtk);
@@ -148,6 +133,9 @@ int assembler(int* commands, char* commands_buffer, lbl* mtk, long size_file) //
         {
             in(commands, &pointer);
         }
+        
+        jump(commands, &pointer, &commands_buffer, command, mtk);
+
 
         counter++;
         number_of_operation++;
@@ -163,7 +151,7 @@ void output_in_convert_commands(int* commands, int pointer, FILE* file_write)
     assert(file_write);
 
     int number_of_write = fwrite(commands, sizeof(int),(size_t) pointer, file_write);
-
+    
     if (number_of_write != pointer)
     {
         fprintf(stderr, "file recording error!");
@@ -248,44 +236,43 @@ int pop(int* commands, int* pointer, char** commands_buffer)
 
     return 0;
 }
-int detect_math_opertion(int* commands, int* pointer, char* command)
+int str_to_math_op(char* command)
+{
+    assert(command);
+    if(strcmp(command, "add") == 0)
+    {
+        return ADD;
+    }
+    else if(strcmp(command, "sub") == 0)
+    {
+        return SUB;
+    }
+    else if(strcmp(command, "mul") == 0)
+    {
+        return MUL;
+    }
+    else if(strcmp(command, "div") == 0)
+    {
+        return DIV;
+    }
+    else if(strcmp(command, "sqrt") == 0)
+    {
+        return SQRT;
+    }
+    
+    return 0;
+}
+
+int math_operation(int* commands, int* pointer, char* command)
 {
     assert(commands);
     assert(pointer);
     assert(command);
 
-    if(strcmp(command, "add") == 0)
-    {
-        math_operation(commands, pointer, ADD);
-    }
+    commands[*pointer] = str_to_math_op(command);
 
-    else if(strcmp(command, "sub") == 0)
-    {
-        math_operation(commands, pointer, SUB);
-    }
-    else if(strcmp(command, "mul") == 0)
-    {
-        math_operation(commands, pointer, MUL);
-    }
-    else if(strcmp(command, "div") == 0)
-    {
-        math_operation(commands, pointer, DIV);
-    }
-    else if(strcmp(command, "sqrt") == 0)
-    {
-        math_operation(commands, pointer, SQRT);
-    }
-
-    return 0;
-}
-
-int math_operation(int* commands, int* pointer, enum commands operation)
-{
-    assert(commands);
-    assert(pointer);
-
-    commands[*pointer] = operation;
-    (*pointer)++;
+    if (commands[*pointer] != 0)
+        (*pointer)++;
 
     return 0;
     
@@ -343,78 +330,46 @@ int ret(int* commands, int* pointer)
     return 0;
 }
 
-int jmp(int* commands, int* pointer, char** commands_buffer, lbl* mtk)
+int str_to_jmp(char* command)
 {
-    assert(commands);
-    assert(commands_buffer);
-    assert(mtk);
+        if(strcmp(command, "jmp") == 0)
+        {
+            return JMP;
+        }
+        else if(strcmp(command, "je") == 0)
+        {
+            return JE;
+        }
+        else if(strcmp(command, "jne") == 0)
+        {
+            return JNE;
+        }
+        else if(strcmp(command, "jb") == 0)
+        {
+            return JB;
+        }
 
-    int pointer_scanf = 0;
-    commands[*pointer] = JMP;
-
-    int metka = 0;
-    sscanf(*commands_buffer, "%d: %n", &metka, &pointer_scanf);
-    commands[*pointer + 1] = mtk->labels[metka];
-
-    (*pointer) += 2;
-    *commands_buffer = *commands_buffer + pointer_scanf;
-
-    return 0;
+        return 0;
 }
 
-int je(int* commands, int* pointer, char** commands_buffer, lbl* mtk)
+int jump(int* commands, int* pointer, char** commands_buffer, char* command, lbl* mtk)
 {
     assert(commands);
     assert(commands_buffer);
+    assert(command);
     assert(mtk);
 
     int pointer_scanf = 0;
-    commands[*pointer] = JE;
+    commands[*pointer] = str_to_jmp(command);
+    if (commands[*pointer] != 0)
+    {
+        int label = 0;
+        sscanf(*commands_buffer, "%d: %n", &label, &pointer_scanf);
+        commands[*pointer + 1] = mtk->labels[label];
 
-    int metka = 0;
-    sscanf(*commands_buffer, "%d: %n", &metka, &pointer_scanf);
-    commands[*pointer + 1] = mtk->labels[metka];
-
-    (*pointer) += 2;
-    *commands_buffer = *commands_buffer + pointer_scanf;
-
-    return 0;
-}
-
-int jne(int* commands, int* pointer, char** commands_buffer, lbl* mtk)
-{
-    assert(commands);
-    assert(commands_buffer);
-    assert(mtk);
-
-    int pointer_scanf = 0;
-    commands[*pointer] = JNE;
-
-    int metka = 0;
-    sscanf(*commands_buffer, "%d: %n", &metka, &pointer_scanf);
-    commands[*pointer + 1] = mtk->labels[metka];
-
-    (*pointer) += 2;
-    *commands_buffer = *commands_buffer + pointer_scanf;
-
-    return 0;
-}
-
-int jb(int* commands, int* pointer, char** commands_buffer, lbl* mtk)
-{
-    assert(commands);
-    assert(commands_buffer);
-    assert(mtk);
-
-    int pointer_scanf = 0;
-    commands[*pointer] = JB;
-
-    int metka = 0;
-    sscanf(*commands_buffer, "%d: %n", &metka, &pointer_scanf);
-    commands[*pointer + 1] = mtk->labels[metka];
-
-    (*pointer) += 2;
-    *commands_buffer = *commands_buffer + pointer_scanf;
+        (*pointer) += 2;
+        *commands_buffer = *commands_buffer + pointer_scanf;
+    }
 
     return 0;
 }
@@ -431,41 +386,42 @@ int label(char* command, int* pointer, lbl* mtk)
     return 0;
 }
 
-int reg(int* commands, int* pointer, enum commands operation)
-{
-    assert(commands);
-    assert(pointer);
-
-    commands[(*pointer) + 1] = operation;
-    (*pointer) += 2;
-
-    return 0;
-}
-
-int detect_reg(int* commands, int* pointer, char* reg_type)
+int reg(int* commands, int* pointer, char* reg_type)
 {
     assert(commands);
     assert(pointer);
     assert(reg_type);
 
+    commands[(*pointer) + 1] = str_to_reg(reg_type);
+
+    if (commands[(*pointer) + 1] != -1)
+        (*pointer) += 2;
+
+    return 0;
+}
+
+int str_to_reg(char* reg_type)
+{
+    assert(reg_type);
+
     if(strcmp(reg_type, "rax") == 0)
     {
-        reg(commands, pointer, RAX);
+        return RAX;
     }
     else if(strcmp(reg_type, "rbx") == 0)
     {
-        reg(commands, pointer, RBX);
+        return RBX;
     }
     else if(strcmp(reg_type, "rcx") == 0)
     {
-        reg(commands, pointer, RCX);
+        return RCX;
     }
     else if(strcmp(reg_type, "rdx") == 0)
     {
-        reg(commands, pointer, RDX);
+        return RDX;
     }
 
-    return 0;
+    return -1;
 }
 
 int push_r(int* commands, int* pointer)
